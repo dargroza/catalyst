@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teams RSC Token and Graph Call</title>
+  <script src="https://statics.teams.cdn.office.net/sdk/v1.11.0/js/MicrosoftTeams.min.js"></script>
+</head>
+<body>
+  <h2>Teams RSC Token & Graph API Messages</h2>
+
+  <div class="section">
+    <button id="getTokenBtn">Get Token</button>
+    <pre id="tokenResult">Token status will appear here</pre>
+  </div>
+
+  <div class="section">
+    <button id="getMessagesBtn">Get Channel Messages</button>
+    <pre id="messagesResult">Message result will appear here</pre>
+  </div>
+
+  <script>
+    let graphToken = null;
+    const teamId = "19%3AKn1MmSys3T5WordfByqA-A_O15u1Y_daUk-TALIOMys1%40thread.tacv2";
+    const channelId = "19%3AKn1MmSys3T5WordfByqA-A_O15u1Y_daUk-TALIOMys1%40thread.tacv2";
+
+    microsoftTeams.initialize();
+
+    document.getElementById("getTokenBtn").addEventListener("click", function () {
+      document.getElementById("tokenResult").textContent = "Requesting token...";
+
+      microsoftTeams.authentication.getAuthToken({
+        successCallback: function (token) {
+          graphToken = token;
+          document.getElementById("tokenResult").textContent = "Token acquired : " + token;
+        },
+        failureCallback: function (error) {
+          document.getElementById("tokenResult").textContent = "Error getting token:\n" + JSON.stringify(error, null, 2);
+        }
+      });
+    });
+
+    document.getElementById("getMessagesBtn").addEventListener("click", function () {
+      if (!graphToken) {
+        document.getElementById("messagesResult").textContent = "Token is missing. Please get the token first.";
+        return;
+      }
+
+      document.getElementById("messagesResult").textContent = "Fetching messages...";
+
+      fetch(`https://graph.microsoft.com/v1.0/teams/${teamId}/channels/${channelId}/messages`, {
+        method: "GET",
+        headers: {
+          "Authorization": "Bearer " + graphToken,
+          "Accept": "application/json"
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Graph API error: " + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById("messagesResult").textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(error => {
+        document.getElementById("messagesResult").textContent = "Error fetching messages:\n" + error;
+      });
+    });
+  </script>
+</body>
+</html>
